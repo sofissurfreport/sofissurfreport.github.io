@@ -19,9 +19,6 @@
       <span class="brand-divider"></span>
       <span>SOFI'S SURF REPORT</span>
     </a>
-    <button class="icon-button" id="settingsButton" type="button" aria-label="Settings" title="Settings">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7Z"/><path d="m19.4 15 .1.1 1.1.9-1.5 2.6-1.4-.6a7.8 7.8 0 0 1-1.6.9l-.2 1.5h-3l-.2-1.5a7.8 7.8 0 0 1-1.6-.9l-1.4.6-1.5-2.6 1.1-.9a7.6 7.6 0 0 1 0-1.9l-1.1-.9 1.5-2.6 1.4.6a7.8 7.8 0 0 1 1.6-.9l.2-1.5h3l.2 1.5a7.8 7.8 0 0 1 1.6.9l1.4-.6 1.5 2.6-1.1.9a7.6 7.6 0 0 1 0 1.9Z" transform="translate(-1 -1) scale(.98)"/></svg>
-    </button>
   </header>
 
   <main class="page-shell">
@@ -78,27 +75,9 @@
     <div class="footer-label">
       <span>MADE FOR GOOD WAVES</span>
       <span class="footer-dot">•</span>
-      <span>SOFI'S SURF REPORT</span>
+      <span>FOR THE ONLY GIRL PRETTIER THAN THE OCEAN</span>
     </div>
   </footer>
-
-  <dialog id="settingsDialog" class="settings-dialog">
-    <form method="dialog">
-      <div class="dialog-heading">
-        <h2>Board settings</h2>
-        <button class="close-button" aria-label="Close settings" value="close">×</button>
-      </div>
-      <p>This page currently saves the beach list in this browser using local storage. To share the same list with your LED board, connect this page to your Cloudflare Worker/KV endpoint.</p>
-      <label for="apiEndpoint">Optional API endpoint</label>
-      <input id="apiEndpoint" type="url" placeholder="https://your-worker.your-subdomain.workers.dev">
-      <p>Your beach list is synced with GitHub through your Cloudflare Worker. Changes will be shared with your LED board.</p>
-      <div class="dialog-actions">
-        <button class="secondary-button" id="clearBeachesButton" type="button">Clear list</button>
-        <button class="add-button dialog-save" id="saveSettingsButton" value="close" type="button">Save setting</button>
-      </div>
-      <p class="form-message" id="settingsMessage" role="status"></p>
-    </form>
-  </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
