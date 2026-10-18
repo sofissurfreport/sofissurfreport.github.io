@@ -17,15 +17,6 @@
   const emptyState = document.getElementById("emptyState");
   const toast = document.getElementById("toast");
 
-  const settingsButton = document.getElementById("settingsButton");
-  const settingsDialog = document.getElementById("settingsDialog");
-  const clearBeachesButton =
-    document.getElementById("clearBeachesButton");
-  const saveSettingsButton =
-    document.getElementById("saveSettingsButton");
-  const settingsMessage =
-    document.getElementById("settingsMessage");
-
   let beaches = [];
   let busy = false;
 
@@ -259,36 +250,6 @@
   urlInput.addEventListener("input", () =>
     urlInput.removeAttribute("aria-invalid")
   );
-
-  settingsButton.addEventListener("click", () => {
-    settingsMessage.textContent =
-      "Connected to your Sofi's Surf Report Cloudflare Worker.";
-    if (typeof settingsDialog.showModal === "function") {
-      settingsDialog.showModal();
-    }
-  });
-
-  saveSettingsButton.addEventListener("click", () => {
-    settingsDialog.close();
-  });
-
-  clearBeachesButton.addEventListener("click", async () => {
-    if (busy) return;
-    if (!confirm("Remove every beach from your shared board list?")) return;
-
-    try {
-      setBusy(true);
-      await saveBeaches([]);
-      settingsMessage.textContent = "Shared beach list cleared.";
-      showToast("All beaches removed from your board.");
-    } catch (error) {
-      settingsMessage.textContent =
-        "Could not clear the list: " + error.message;
-    } finally {
-      setBusy(false);
-      render();
-    }
-  });
 
   loadBeaches();
 })();
