@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#173d55">
   <meta name="description" content="Manage the beaches on Sofi's Surf Report LED surf board.">
   <title>Sofi's Surf Report</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="style.css">
   <script src="website.js" defer></script>
 </head>
 <body>
@@ -67,14 +67,6 @@
         <p>No beaches added yet.</p>
         <span>Add a beach above to get your board list started.</span>
       </div>
-      <div class="list-footer">
-        <span class="status-icon" aria-hidden="true">✓</span>
-        <div>
-          <strong id="statusTitle">List saved on this device</strong>
-          <p id="statusDescription">This demo stores changes in this browser only.</p>
-        </div>
-        <button class="text-button" id="exportButton" type="button">Export JSON</button>
-      </div>
     </section>
   </main>
 
@@ -99,7 +91,7 @@
       <p>This page currently saves the beach list in this browser using local storage. To share the same list with your LED board, connect this page to your Cloudflare Worker/KV endpoint.</p>
       <label for="apiEndpoint">Optional API endpoint</label>
       <input id="apiEndpoint" type="url" placeholder="https://your-worker.your-subdomain.workers.dev">
-      <p class="field-hint">Saved locally for now. The included JavaScript does not send data to a server.</p>
+      <p>Your beach list is synced with GitHub through your Cloudflare Worker. Changes will be shared with your LED board.</p>
       <div class="dialog-actions">
         <button class="secondary-button" id="clearBeachesButton" type="button">Clear list</button>
         <button class="add-button dialog-save" id="saveSettingsButton" value="close" type="button">Save setting</button>

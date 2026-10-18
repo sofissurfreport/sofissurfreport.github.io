@@ -1,12 +1,12 @@
+
 /* Sofi's Surf Report
- * This starter version stores the beach list in this browser only.
- * Connect a Cloudflare Worker/KV endpoint to share settings with the LED board.
+ * Loads and saves the shared beach list through Cloudflare.
  */
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "sofis-surf-report-beaches-v1";
-  const ENDPOINT_KEY = "sofis-surf-report-api-endpoint-v1";
+  const API_URL =
+    "https://sofis-surf-report.sofissurfreport.workers.dev/";
 
   const form = document.getElementById("beachForm");
   const nameInput = document.getElementById("beachName");
@@ -15,51 +15,72 @@
   const beachList = document.getElementById("beachList");
   const beachCount = document.getElementById("beachCount");
   const emptyState = document.getElementById("emptyState");
-  const exportButton = document.getElementById("exportButton");
   const toast = document.getElementById("toast");
+
   const settingsButton = document.getElementById("settingsButton");
   const settingsDialog = document.getElementById("settingsDialog");
-  const apiEndpoint = document.getElementById("apiEndpoint");
-  const saveSettingsButton = document.getElementById("saveSettingsButton");
-  const clearBeachesButton = document.getElementById("clearBeachesButton");
-  const settingsMessage = document.getElementById("settingsMessage");
+  const clearBeachesButton =
+    document.getElementById("clearBeachesButton");
+  const saveSettingsButton =
+    document.getElementById("saveSettingsButton");
+  const settingsMessage =
+    document.getElementById("settingsMessage");
 
-  let beaches = loadBeaches();
+  let beaches = [];
+  let busy = false;
 
-  function loadBeaches() {
+  async function requestBeaches(method = "GET", data = null) {
+    const options = { method };
+
+    if (method === "POST") {
+      options.headers = { "Content-Type": "application/json" };
+      options.body = JSON.stringify({ beaches: data });
+    }
+
+    const response = await fetch(API_URL, options);
+    const result = await response.json();
+
+    if (!response.ok || result.error || result.success === false) {
+      throw new Error(result.error || "The server request failed.");
+    }
+
+    return result;
+  }
+
+  async function loadBeaches() {
+    beachList.textContent = "Loading beaches...";
+    emptyState.hidden = true;
+
     try {
-      const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-      return Array.isArray(parsed)
-        ? parsed.filter(item => item && typeof item.name === "string" && typeof item.url === "string")
-        : [];
-    } catch {
-      return [];
+      const data = await requestBeaches();
+      beaches = Array.isArray(data.beaches) ? data.beaches : [];
+      render();
+    } catch (error) {
+      beachList.textContent = "";
+      emptyState.hidden = false;
+      emptyState.querySelector("p").textContent =
+        "Couldn't load beaches.";
+      emptyState.querySelector("span:last-child").textContent =
+        "Check your connection and try refreshing the page.";
+      showToast("Could not load beaches: " + error.message);
     }
   }
 
-  function saveBeaches() {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(beaches));
-      return true;
-    } catch {
-      showToast("Could not save in this browser. Check storage settings.");
-      return false;
-    }
+  async function saveBeaches(updatedBeaches) {
+    await requestBeaches("POST", updatedBeaches);
+    beaches = updatedBeaches;
+    render();
   }
 
   function isSurflineUrl(value) {
     try {
       const url = new URL(value);
-      return (url.protocol === "https:" || url.protocol === "http:") &&
-        (url.hostname === "surfline.com" || url.hostname.endsWith(".surfline.com"));
+      return url.protocol === "https:" &&
+        (url.hostname === "surfline.com" ||
+         url.hostname.endsWith(".surfline.com"));
     } catch {
       return false;
     }
-  }
-
-  function escapeText(value) {
-    // Values are rendered using textContent below; this helper is for URL labels only.
-    return String(value);
   }
 
   function waveSvg() {
@@ -68,13 +89,18 @@
     svg.setAttribute("viewBox", "0 0 100 48");
     svg.setAttribute("class", "row-wave");
     svg.setAttribute("aria-hidden", "true");
+
     const path = document.createElementNS(ns, "path");
-    path.setAttribute("d", "M4 37 C20 37 29 29 38 16 C45 5 54 1 62 5 C68 8 68 14 65 18 C62 21 58 20 56 16 C60 26 70 31 82 29 C88 28 92 25 96 22");
+    path.setAttribute(
+      "d",
+      "M4 37 C20 37 29 29 38 16 C45 5 54 1 62 5 C68 8 68 14 65 18 C62 21 58 20 56 16 C60 26 70 31 82 29 C88 28 92 25 96 22"
+    );
     path.setAttribute("fill", "none");
     path.setAttribute("stroke", "currentColor");
     path.setAttribute("stroke-width", "5");
     path.setAttribute("stroke-linecap", "round");
     svg.appendChild(path);
+
     return svg;
   }
 
@@ -83,25 +109,28 @@
     const svg = document.createElementNS(ns, "svg");
     svg.setAttribute("viewBox", "0 0 24 24");
     svg.setAttribute("aria-hidden", "true");
-    const paths = [
+
+    [
       "M4 7h16",
       "M9 7V4h6v3",
       "M7 7l1 13h8l1-13",
       "M10 10v7",
       "M14 10v7"
-    ];
-    paths.forEach(d => {
+    ].forEach(d => {
       const path = document.createElementNS(ns, "path");
       path.setAttribute("d", d);
       svg.appendChild(path);
     });
+
     return svg;
   }
 
   function render() {
     beachList.replaceChildren();
     emptyState.hidden = beaches.length > 0;
-    beachCount.textContent = `${beaches.length} ${beaches.length === 1 ? "beach" : "beaches"}`;
+
+    beachCount.textContent =
+      `${beaches.length} ${beaches.length === 1 ? "beach" : "beaches"}`;
 
     beaches.forEach((beach, index) => {
       const row = document.createElement("article");
@@ -121,7 +150,7 @@
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.title = beach.url;
-      link.textContent = escapeText(beach.url);
+      link.textContent = beach.url;
 
       info.append(title, link);
 
@@ -129,16 +158,28 @@
       remove.type = "button";
       remove.className = "remove-button";
       remove.appendChild(trashSvg());
-      const removeLabel = document.createElement("span");
-      removeLabel.textContent = "Remove";
-      remove.appendChild(removeLabel);
+
+      const label = document.createElement("span");
+      label.textContent = "Remove";
+      remove.appendChild(label);
       remove.setAttribute("aria-label", `Remove ${beach.name}`);
-      remove.addEventListener("click", () => {
-        const removed = beaches[index];
-        beaches.splice(index, 1);
-        saveBeaches();
-        render();
-        showToast(`${removed.name} removed from this browser's list.`);
+      remove.disabled = busy;
+
+      remove.addEventListener("click", async () => {
+        if (busy) return;
+
+        const updated = beaches.filter((_, i) => i !== index);
+
+        try {
+          setBusy(true);
+          await saveBeaches(updated);
+          showToast(`${beach.name} removed from your board.`);
+        } catch (error) {
+          showToast("Couldn't remove beach: " + error.message);
+        } finally {
+          setBusy(false);
+          render();
+        }
       });
 
       row.append(info, remove);
@@ -146,11 +187,20 @@
     });
   }
 
+  function setBusy(value) {
+    busy = value;
+    form.querySelector('button[type="submit"]').disabled = value;
+    clearBeachesButton.disabled = value;
+    render();
+  }
+
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add("show");
-    window.clearTimeout(showToast.timeout);
-    showToast.timeout = window.setTimeout(() => toast.classList.remove("show"), 3000);
+    clearTimeout(showToast.timeout);
+    showToast.timeout = setTimeout(
+      () => toast.classList.remove("show"), 3500
+    );
   }
 
   function clearValidation() {
@@ -159,8 +209,10 @@
     urlInput.removeAttribute("aria-invalid");
   }
 
-  form.addEventListener("submit", event => {
+  form.addEventListener("submit", async event => {
     event.preventDefault();
+    if (busy) return;
+
     clearValidation();
 
     const name = nameInput.value.trim();
@@ -172,77 +224,71 @@
       nameInput.focus();
       return;
     }
+
     if (!isSurflineUrl(url)) {
       urlInput.setAttribute("aria-invalid", "true");
-      formMessage.textContent = "Please enter a valid Surfline link (surfline.com).";
+      formMessage.textContent =
+        "Please enter a valid HTTPS Surfline link.";
       urlInput.focus();
       return;
     }
-    if (beaches.some(beach => beach.url.toLowerCase() === url.toLowerCase())) {
+
+    if (beaches.some(b => b.url.toLowerCase() === url.toLowerCase())) {
       urlInput.setAttribute("aria-invalid", "true");
-      formMessage.textContent = "That Surfline link is already on your board list.";
+      formMessage.textContent = "That Surfline link is already on your list.";
       urlInput.focus();
       return;
     }
 
-    beaches.push({ name, url });
-    saveBeaches();
-    render();
-    form.reset();
-    nameInput.focus();
-    showToast(`${name} added to the list on this device.`);
+    try {
+      setBusy(true);
+      await saveBeaches([...beaches, { name, url }]);
+      form.reset();
+      showToast(`${name} saved to your board!`);
+    } catch (error) {
+      showToast("Couldn't save beach: " + error.message);
+    } finally {
+      setBusy(false);
+      render();
+    }
   });
 
-  nameInput.addEventListener("input", () => nameInput.removeAttribute("aria-invalid"));
-  urlInput.addEventListener("input", () => urlInput.removeAttribute("aria-invalid"));
-
-  exportButton.addEventListener("click", () => {
-    const data = JSON.stringify({ beaches }, null, 2);
-    const blob = new Blob([data], { type: "application/json" });
-    const downloadUrl = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = downloadUrl;
-    anchor.download = "sofis-surf-report-beaches.json";
-    document.body.appendChild(anchor);
-    anchor.click();
-    anchor.remove();
-    URL.revokeObjectURL(downloadUrl);
-    showToast("Beach list exported as JSON.");
-  });
+  nameInput.addEventListener("input", () =>
+    nameInput.removeAttribute("aria-invalid")
+  );
+  urlInput.addEventListener("input", () =>
+    urlInput.removeAttribute("aria-invalid")
+  );
 
   settingsButton.addEventListener("click", () => {
-    apiEndpoint.value = localStorage.getItem(ENDPOINT_KEY) || "";
-    settingsMessage.textContent = "";
-    if (typeof settingsDialog.showModal === "function") settingsDialog.showModal();
-    else showToast("Settings dialog is not supported by this browser.");
+    settingsMessage.textContent =
+      "Connected to your Sofi's Surf Report Cloudflare Worker.";
+    if (typeof settingsDialog.showModal === "function") {
+      settingsDialog.showModal();
+    }
   });
 
   saveSettingsButton.addEventListener("click", () => {
-    const value = apiEndpoint.value.trim();
-    if (value) {
-      try {
-        const url = new URL(value);
-        if (url.protocol !== "https:" && url.protocol !== "http:") throw new Error("protocol");
-        localStorage.setItem(ENDPOINT_KEY, value);
-      } catch {
-        settingsMessage.textContent = "Enter a valid http:// or https:// endpoint URL.";
-        return;
-      }
-    } else {
-      localStorage.removeItem(ENDPOINT_KEY);
-    }
     settingsDialog.close();
-    showToast("Setting saved locally. API syncing is not connected yet.");
   });
 
-  clearBeachesButton.addEventListener("click", () => {
-    if (!window.confirm("Remove every beach from this browser's list?")) return;
-    beaches = [];
-    saveBeaches();
-    render();
-    settingsMessage.textContent = "Beach list cleared.";
-    showToast("Beach list cleared.");
+  clearBeachesButton.addEventListener("click", async () => {
+    if (busy) return;
+    if (!confirm("Remove every beach from your shared board list?")) return;
+
+    try {
+      setBusy(true);
+      await saveBeaches([]);
+      settingsMessage.textContent = "Shared beach list cleared.";
+      showToast("All beaches removed from your board.");
+    } catch (error) {
+      settingsMessage.textContent =
+        "Could not clear the list: " + error.message;
+    } finally {
+      setBusy(false);
+      render();
+    }
   });
 
-  render();
+  loadBeaches();
 })();
