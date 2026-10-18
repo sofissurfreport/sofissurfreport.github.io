@@ -1,0 +1,16 @@
+{
+  "beaches": [
+    {
+      "name": "SanO",
+      "url": "https://www.surfline.com/surf-report/san-onofre-state-beach/584204204e65fad6a77099d4"
+    },
+    {
+      "name": "Doho",
+      "url": "https://www.surfline.com/surf-report/doheny-state-beach/5842041f4e65fad6a77088d7"
+    },
+    {
+      "name": "Thalia",
+      "url": "https://www.surfline.com/surf-report/thalia-street/5842041f4e65fad6a77088de"
+    }
+  ]
+}
