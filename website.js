@@ -181,7 +181,6 @@
   function setBusy(value) {
     busy = value;
     form.querySelector('button[type="submit"]').disabled = value;
-    clearBeachesButton.disabled = value;
     render();
   }
 
